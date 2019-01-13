@@ -16,8 +16,6 @@ import java.awt.Rectangle;
  */
 public class Location implements Comparable<Location>{
 
-  static RunTime runTime = RunTime.get();
-
   public int x;
   public int y;
   private IScreen otherScreen = null;
@@ -503,9 +501,6 @@ public class Location implements Comparable<Location>{
     if (getScreen() == null) {
       Debug.error("Point %s outside any screen for %s - might not work", this, action);
       return Screen.getGlobalRobot();
-    }
-    if (!getScreen().isOtherScreen()) {
-      getScreen().showTarget(this);
     }
     return getScreen().getRobot();
   }

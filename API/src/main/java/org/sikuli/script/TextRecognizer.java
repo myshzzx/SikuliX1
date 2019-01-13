@@ -3,9 +3,11 @@
  */
 package org.sikuli.script;
 
+import com.sun.jna.Platform;
 import net.sourceforge.tess4j.Tesseract1;
 import net.sourceforge.tess4j.TesseractException;
 import net.sourceforge.tess4j.util.ImageHelper;
+import net.sourceforge.tess4j.util.LoadLibs;
 import org.sikuli.basics.Debug;
 import org.sikuli.basics.FileManager;
 import org.sikuli.basics.Settings;
@@ -14,6 +16,10 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 
 public class TextRecognizer {
@@ -25,12 +31,11 @@ public class TextRecognizer {
     Finder2.init();
   }
 
-  private static boolean valid = false;
   public boolean isValid() {
     if (tess == null) {
       return false;
     }
-    return valid;
+    return true;
   }
 
   public int getActualDPI() {
@@ -47,46 +52,85 @@ public class TextRecognizer {
   public static TextRecognizer start() {
     if (textRecognizer == null) {
       textRecognizer = new TextRecognizer();
-      if (RunTime.get().runningMac) {
+      if (RunTime.get().runningWindows && RunTime.get().runningAs.equals(RunTime.RunType.OTHER)) {
+        File fLibs = RunTime.get().fLibsFolder;
+        String pLibs = fLibs.getAbsolutePath();
+        System.setProperty("jna.library.path", pLibs);
+        String libFolder = "/" + Platform.RESOURCE_PREFIX + "/";
+        Class tessClass = net.sourceforge.tess4j.Tesseract.class;
+        String tessLib = LoadLibs.LIB_NAME;
+        String nTessLib = tessLib + ".dll";
+        String pTessLib = libFolder + nTessLib;
+        File fTessLib = new File(fLibs, nTessLib);
+        if (!fTessLib.exists()) {
+          try (FileOutputStream outFile = new FileOutputStream(fTessLib);
+               InputStream inpTessLib = tessClass.getResourceAsStream(pTessLib)) {
+            RunTime.copy(inpTessLib, outFile);
+          } catch (IOException ex) {
+            Debug.error("TextRecognizer: export native lib: %s (%s)", pTessLib, ex.getMessage());
+            return null;
+          }
+        }
+        Class leptClass = net.sourceforge.lept4j.Box.class;
+        String leptLib = net.sourceforge.lept4j.util.LoadLibs.LIB_NAME;
+        String nLeptLib = leptLib + ".dll";
+        String pLeptLib = libFolder + nLeptLib;
+        File fLeptLib = new File(fLibs, nLeptLib);
+        if (!fLeptLib.exists()) {
+          try (FileOutputStream outFile = new FileOutputStream(fLeptLib);
+               InputStream inpLeptLib = leptClass.getResourceAsStream(pLeptLib)) {
+            RunTime.copy(inpLeptLib, outFile);
+          } catch (IOException ex) {
+            Debug.error("TextRecognizer: export native lib: %s (%s)", pLeptLib, ex.getMessage());
+            return null;
+          }
+        }
+      } else {
         System.setProperty("jna.library.path", RunTime.get().fLibsFolder.getAbsolutePath());
       }
-      textRecognizer.tess = new Tesseract1();
-      File fTessdataPath = extractTessdata();
-      if (null != fTessdataPath && new File(fTessdataPath, "eng.traineddata").exists()) {
-        valid = true;
-      } else {
-        Debug.error("TextRecognizer: start: no eng.traineddata");
-        valid = false;
-      }
-      if (!valid) {
-        Debug.error("TextRecognizer not working: tessdata stuff not available at:\n%s", fTessdataPath);
-      } else {
-        Debug.log(lvl, "TextRecognizer: init OK: using as data folder:\n%s", fTessdataPath);
-        textRecognizer.tess.setDatapath(textRecognizer.dataPath);
+      try {
+        textRecognizer.tess = new Tesseract1();
+        if (extractTessdata()) {
+          Debug.log(lvl, "TextRecognizer: start: data folder: %s", textRecognizer.dataPath);
+          textRecognizer.tess.setDatapath(textRecognizer.dataPath);
+          if (!new File(textRecognizer.dataPath, textRecognizer.language + ".traineddata").exists()) {
+            Debug.error("TextRecognizer: start: no %s.traineddata - provide another language", textRecognizer.language);
+          } else {
+            Debug.log(lvl, "TextRecognizer: start: language: %s", textRecognizer.language);
+          }
+        } else {
+          textRecognizer = null;
+          Debug.error("TextRecognizer: start: no valid tesseract data folder");
+        }
+      } catch (Exception e) {
+        textRecognizer = null;
+        Debug.error("TextRecognizer: start: %s", e.getMessage());
       }
     }
+    if (null == textRecognizer) {
+      RunTime.get().terminate(999, "fatal: TextRecognizer could not be initialized");
+    }
+    textRecognizer.setLanguage(textRecognizer.language);
     return textRecognizer;
   }
 
-  public static File extractTessdata() {
-    File fTessdataPath = null;
-    valid = false;
+  public static boolean extractTessdata() {
+    File fTessdataPath;
     if (dataPath != null) {
       fTessdataPath = new File(FileManager.slashify(dataPath, false), "tessdata");
-      valid = fTessdataPath.exists();
-    }
-    if (!valid) {
+    } else {
       fTessdataPath = new File(RunTime.get().fSikulixAppPath, "SikulixTesseract/tessdata");
-      if (!(valid = fTessdataPath.exists())) {
-        if (!(valid = (null != RunTime.get().extractTessData(fTessdataPath)))) {
+      if (!fTessdataPath.exists()) {
+        if (null == RunTime.get().extractTessData(fTessdataPath)) {
           Debug.error("TextRecognizer: start: export tessdata not possible");
         }
       }
-      if (valid) {
-        dataPath = fTessdataPath.getAbsolutePath();
-      }
     }
-    return fTessdataPath;
+    if (fTessdataPath.exists()) {
+      dataPath = fTessdataPath.getAbsolutePath();
+      return true;
+    }
+    return false;
   }
 
   public Tesseract1 getAPI() {
@@ -153,11 +197,11 @@ public class TextRecognizer {
   public TextRecognizer setDataPath(String dataPath) {
     if (isValid()) {
       if (new File(dataPath).exists()) {
-        if (new File(dataPath, "eng.traineddata").exists()) {
+        if (new File(dataPath, language + ".traineddata").exists()) {
           this.dataPath = dataPath;
           tess.setDatapath(this.dataPath);
         } else {
-          Debug.error("TextRecognizer: setDataPath: not valid - no eng.traineddata (%s)",dataPath);
+          Debug.error("TextRecognizer: setDataPath: not valid - no %s.traineddata (%s)",language, dataPath);
         }
       }
     }

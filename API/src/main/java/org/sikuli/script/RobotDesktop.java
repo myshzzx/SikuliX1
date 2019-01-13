@@ -33,7 +33,6 @@ public class RobotDesktop extends Robot implements IRobot {
   public static int stdDelay = 10;
   public static int stdMaxElapsed = 1000;
   private Screen scr = null;
-  private static RunTime runTime = RunTime.get();
   private long start;
   private static boolean alwaysNewRobot = false;
   private static boolean isMouseInitialized = false;
@@ -59,16 +58,18 @@ public class RobotDesktop extends Robot implements IRobot {
     mouseMove(x, y);
   }
 
+
+
   private void doMouseDown(int buttons) {
-    if (Settings.RobotFake && runTime.needsRobotFake()) {
-      Screen.getFakeRegion().silentHighlight(true);
+    if (Settings.ClickTypeHack && RunTime.get().needsRobotFake()) {
+      Region.getFakeRegion().silentHighlight(true);
     }
     logRobot(stdAutoDelay, "MouseDown: WaitForIdle: %s - Delay: %d");
     setAutoDelay(stdAutoDelay);
     setAutoWaitForIdle(Settings.ClickFast);
-    if (Settings.RobotFake && runTime.needsRobotFake()) {
+    if (Settings.ClickTypeHack && RunTime.get().needsRobotFake()) {
       delay(20);
-      Screen.getFakeRegion().silentHighlight(false);
+      Region.getFakeRegion().silentHighlight(false);
       delay(20);
     }
     mousePress(buttons);
@@ -92,9 +93,17 @@ public class RobotDesktop extends Robot implements IRobot {
   }
 
   private void doKeyPress(int keyCode) {
+    if (Settings.ClickTypeHack && RunTime.get().needsRobotFake()) {
+      Region.getFakeRegion().silentHighlight(true);
+    }
     logRobot(stdAutoDelay, "KeyPress: WaitForIdle: %s - Delay: %d");
     setAutoDelay(stdAutoDelay);
     setAutoWaitForIdle(false);
+    if (Settings.ClickTypeHack && RunTime.get().needsRobotFake()) {
+      delay(20);
+      Region.getFakeRegion().silentHighlight(false);
+      delay(20);
+    }
     keyPress(keyCode);
     if (stdAutoDelay == 0) {
       delay(stdDelay);
@@ -125,11 +134,6 @@ public class RobotDesktop extends Robot implements IRobot {
   @Override
   public Screen getScreen() {
     return scr;
-  }
-
-  public RobotDesktop(Screen screen) throws AWTException {
-    super(runTime.getGraphicsDevice(screen.getcurrentID()));
-    scr = screen;
   }
 
   public RobotDesktop() throws AWTException {

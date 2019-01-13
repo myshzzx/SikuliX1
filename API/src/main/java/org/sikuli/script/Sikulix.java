@@ -32,7 +32,6 @@ public class Sikulix {
   }
 
   private static final String prefNonSikuli = "nonSikuli_";
-  private static RunTime runTime = null;
   private static Point locPopAt = null;
   private static String showBase = "API/src/main/resources/ImagesAPI";
 
@@ -49,7 +48,7 @@ public class Sikulix {
   }
 
   public static void terminate(int retVal, String msg, Object... args) {
-    runTime.terminate(retVal, msg, args);
+    RunTime.get().terminate(retVal, msg, args);
   }
 
   public static void terminate() {
@@ -60,12 +59,10 @@ public class Sikulix {
   public static void main(String[] args) throws FindFailed {
 
     if (args.length == 1 && "buildDate".equals(args[0])) {
-      runTime = RunTime.get(RunTime.Type.SETUP);
+      RunTime runTime = RunTime.get(RunTime.Type.SETUP);
       System.out.println(runTime.SXBuild);
       System.exit(0);
     }
-
-    runTime = RunTime.get();
 
     if (args.length == 0) {
       TextRecognizer.extractTessdata();
@@ -73,18 +70,18 @@ public class Sikulix {
     }
 
     if (args.length > 0 && "play".equals(args[0])) {
-      Debug.off();
-      ImagePath.setBundlePath(new File(runTime.fWorkDir, showBase).getAbsolutePath());
+      //Debug.off();
+      //Debug.on(3);
+      //ImagePath.setBundlePath(new File(runTime.fWorkDir, showBase).getAbsolutePath());
       terminate();
     }
 
-    RunTime.checkArgs(runTime, args, RunTime.Type.API);
-    if (runTime.runningScripts) {
+    if (RunTime.get(RunTime.Type.API, args).runningScripts) {
       int exitCode = Runner.runScripts(args);
       terminate(exitCode, "");
     }
 
-    if (runTime.shouldRunServer) {
+    if (RunTime.get().shouldRunServer) {
       if (RunServer.run(null)) {
         terminate(1, "");
       }
@@ -104,7 +101,7 @@ public class Sikulix {
         for (String sys : new String[]{"mac", "windows", "linux"}) {
           p("******* %s", sys);
           String sxcontentFolder = String.format("sikulixlibs/%s/libs64", sys);
-          List<String> sikulixlibs = runTime.getResourceList(sxcontentFolder);
+          List<String> sikulixlibs = RunTime.get().getResourceList(sxcontentFolder);
           String sxcontent = "";
           for (String lib : sikulixlibs) {
             if (lib.equals("sikulixcontent")) {
@@ -125,8 +122,8 @@ public class Sikulix {
     }
 
     if (args.length == 1 && "test".equals(args[0])) {
-      String version = runTime.getVersion();
-      File lastSession = new File(runTime.fSikulixStore, "LastAPIJavaScript.js");
+      String version = RunTime.get().getVersion();
+      File lastSession = new File(RunTime.get().fSikulixStore, "LastAPIJavaScript.js");
       String runSomeJS = "";
       if (lastSession.exists()) {
         runSomeJS = FileManager.readFileToString(lastSession);

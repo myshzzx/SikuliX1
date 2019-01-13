@@ -303,22 +303,23 @@ public class App {
   }
 
   public App() {
-    init("");
+    if (_osUtil == null) {
+      _osUtil = SysUtil.getOSUtil();
+      _osUtil.checkFeatureAvailability();
+    }
   }
 
   public App(String name) {
+    this();
     appNameGiven = name;
     init(appNameGiven);
   }
 
   private void init(String name) {
-    if (_osUtil == null) {
-      _osUtil = SysUtil.getOSUtil();
-      _osUtil.checkFeatureAvailability();
-    }
-    if (name.isEmpty())
+    if (name.isEmpty()) {
       return;
-    appName = appNameGiven;
+    }
+    appName = appExec = appNameGiven;
     String[] parts;
     //C:\Program Files\Mozilla Firefox\firefox.exe -- options
     parts = appName.split(" -- ");
@@ -336,7 +337,7 @@ public class App {
         }
       }
     }
-    File fExec = new File(appName);
+    File fExec = new File(appExec);
     if (fExec.isAbsolute()) {
       if (!fExec.exists()) {
         log("App: init: does not exist: %s", fExec);
@@ -384,7 +385,9 @@ public class App {
     logOn();
     log("***** all running apps");
     for (App app : appList) {
-      log("%s", app);
+      if (app.getPID() > 0) {
+        log("%s", app);
+      }
     }
     log("***** end of list (%d)", appList.size());
     logOff();
@@ -747,10 +750,12 @@ public class App {
    * @return the region
    */
   public static Region focusedWindow() {
+    new App();
     return asRegion(_osUtil.getFocusedWindow());
   }
 
   public List<Region> getWindows() {
+    new App();
     List<Region> regWindows = new ArrayList<>();
     return _osUtil.getWindows(this);
   }

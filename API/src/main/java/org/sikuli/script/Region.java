@@ -20,8 +20,13 @@ import org.sikuli.util.ScreenHighlighter;
  */
 public class Region {
 
+//  static {
+//    System.out.println("************************************************** First Touch: Region");
+//  }
+
   private static String me = "Region: ";
   private static int lvl = 3;
+  private static Region fakeRegion;
 
   private static void log(int level, String message, Object... args) {
     Debug.logx(level, me + message, args);
@@ -94,6 +99,13 @@ public class Region {
   private boolean isScreenUnion = false;
   private boolean isVirtual = false;
   private long lastSearchTimeRepeat = -1;
+
+  protected static Region getFakeRegion() {
+    if (fakeRegion == null) {
+      fakeRegion = new Region(0, 0, 5, 5);
+    }
+    return fakeRegion;
+  }
 
   public String getName() {
     return name;
@@ -2101,16 +2113,21 @@ public class Region {
     if (isOtherScreen()) {
       return this;
     }
-    Debug.log(lvl, "highlight " + (toEnable ? "on: " : "off: ") + toStringShort());
+    if (!silent) {
+      Debug.log(lvl, "highlight " + (toEnable ? "on: " : "off: ") + toStringShort());
+    }
     if (toEnable) {
-      overlay = new ScreenHighlighter(getScreen(), color);
-      overlay.setWaitAfter(silent);
-      overlay.highlight(this);
-    } else {
-      if (overlay != null) {
+      if (null == overlay) {
+        overlay = new ScreenHighlighter(getScreen(), color);
+        overlay.setWaitAfter(silent);
+        overlay.highlight(this);
+      } else {
+        toEnable = false;
+      }
+    }
+    if (!toEnable && null != overlay){
         overlay.close();
         overlay = null;
-      }
     }
     return this;
   }
@@ -2760,7 +2777,11 @@ public class Region {
   }
 
   public List<Match> findLines(String text) {
-    return ((Finder) doFindText(text, levelLine, true)).getList();
+    Finder finder = (Finder) doFindText(text, levelLine, true);
+    if (null != finder) {
+      return finder.getList();
+    }
+    return new ArrayList<>();
   }
 
   //</editor-fold>

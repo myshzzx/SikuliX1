@@ -30,8 +30,6 @@ import org.sikuli.basics.Settings;
  */
 public class ImagePath {
 
-  static RunTime runTime = RunTime.get();
-
   private static final String me = "ImagePath: ";
   private static final int lvl = 3;
 
@@ -422,7 +420,7 @@ public class ImagePath {
   public static boolean addJar(String fpJar, String fpImage) {
     URL pathURL = null;
     if (".".equals(fpJar)) {
-      fpJar = runTime.fSxBaseJar.getAbsolutePath();
+      fpJar = RunTime.get().fSxBaseJar.getAbsolutePath();
       if (!fpJar.endsWith(".jar")) {
         return false;
       }
@@ -649,7 +647,7 @@ public class ImagePath {
 				CodeSource codeSrc = cls.getProtectionDomain().getCodeSource();
 				if (codeSrc != null && codeSrc.getLocation() != null) {
 					URL jarURL = codeSrc.getLocation();
-					if (runTime.runningWinApp || jarURL.getPath().endsWith(".jar")) {
+					if (jarURL.getPath().endsWith(".jar")) {
 						pathURL = FileManager.makeURL(jarURL.toString() + "!/" + fpSubPath, "jar");
 					} else {
 						if (fpAltPath == null || fpAltPath.isEmpty()) {

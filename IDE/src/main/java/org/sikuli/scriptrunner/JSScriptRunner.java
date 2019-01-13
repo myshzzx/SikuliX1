@@ -13,21 +13,11 @@ import java.io.File;
 
 public class JSScriptRunner implements IScriptRunner {
 
-  private static RunTime runTime = ScriptingSupport.runTime;
-
   private static final String me = "JSScriptRunner: ";
   private int lvl = 3;
 
   private void log(int level, String message, Object... args) {
     Debug.logx(level, me + message, args);
-  }
-
-  private void logp(String message, Object... args) {
-    if (runTime.runningWinApp) {
-      log(0, message, args);
-    } else {
-      System.out.println(String.format(message, args));
-    }
   }
 
   private boolean isReady = false;

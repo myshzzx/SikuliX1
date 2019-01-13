@@ -7,6 +7,7 @@ import org.sikuli.basics.Debug;
 import org.sikuli.basics.FileManager;
 import org.sikuli.basics.Settings;
 import org.sikuli.script.RunTime;
+import org.sikuli.script.Screen;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -156,7 +157,6 @@ public class RunSetup {
 
     if (!testingMaven && (runTime.runningInProject || runningWithProject)) {
       runningWithProject = true;
-      runTime.shouldCleanDownloads = true;
       downloadIDE = String.format("sikulixsetupIDE-%s-%s.jar", version, runTime.sxBuildStamp);
       downloadAPI = String.format("sikulixsetupAPI-%s-%s.jar", version, runTime.sxBuildStamp);
       downloadLibsMac = String.format("sikulixlibsmac-%s-%s.jar", version, runTime.sxBuildStamp);
@@ -357,7 +357,6 @@ public class RunSetup {
     }
 
     //<editor-fold defaultstate="collapsed" desc="general preps">
-    Settings.runningSetup = true;
     Settings.LogTime = true;
 
     //TODO runTime.makeFolders();
@@ -788,7 +787,7 @@ public class RunSetup {
     if (getJython) {
       sDownloaded = "Jython";
       targetJar = new File(workDir, localJython).getAbsolutePath();
-      if (Settings.isJava6()) {
+      if (false) { //if (Settings.isJava6()) {
         logPlus(lvl, "running on Java 6: need to use Jython 2.5 - which is downloaded");
         fDownloaded = downloadedAlready("python25", "Jython 2.5", false);
         if (fDownloaded == null) {
@@ -1087,13 +1086,13 @@ public class RunSetup {
     }
     //</editor-fold>
 
-    if (!notests && runTime.isHeadless()) {
+    if (!notests && Screen.isHeadless()) {
       log(lvl, "Running headless --- skipping tests");
     }
 
     //<editor-fold defaultstate="collapsed" desc="api test">
     boolean runAPITest = false;
-    if (getAPI && !notests && !runTime.isHeadless()) {
+    if (getAPI && !notests && !Screen.isHeadless()) {
       String apiTest = hasOptions ? "testSetupSilent" : "testSetup";
       logPlus(lvl, "Trying to run functional test: JAVA-API %s", splashJava9);
       if (runTime.isJava9("setup API test - with ProcessRunner")) {
@@ -1140,7 +1139,7 @@ public class RunSetup {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="ide test">
-    if (getIDE && !notests && !runTime.isHeadless()) {
+    if (getIDE && !notests && !Screen.isHeadless()) {
       success = true;
       if (!runAPITest) {
         //TODO runTime.makeFolders();

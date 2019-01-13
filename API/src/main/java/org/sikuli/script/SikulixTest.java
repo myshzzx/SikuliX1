@@ -17,7 +17,7 @@ import java.util.List;
 public class SikulixTest {
 
   //<editor-fold desc="housekeeping">
-  private static Screen scr = new Screen();
+  private static Screen scr;
 
   private static long start = -1;
 
@@ -87,7 +87,7 @@ public class SikulixTest {
     runnable.start();
   }
 
-  private static RunTime runTime = RunTime.get();
+  private static RunTime runTime;
   private static Region reg = null;
   private static Region regWin = null;
 
@@ -203,7 +203,9 @@ public class SikulixTest {
   //</editor-fold>
 
   public static void main(String[] args) {
+    runTime = RunTime.get();
     Debug.reset();
+    scr = new Screen();
     String browser = "edge";
     if (runTime.runningMac) {
       browser = "safari";
@@ -236,33 +238,6 @@ public class SikulixTest {
       before("test99", "play");
 //      Debug.on(3);
 //      Debug.globalTraceOn();
-/*
-      App app = new App("intellij ide");
-      Debug startTimer = Debug.startTimer();
-      boolean run = app.isRunning();
-      p("app: %s running: %s (%d)", app, run, startTimer.end());
-*/
-      //List<String[]> apps = App.getApp("intellij idea ce");
-      App.listApps();
-//      App.logOn();
-      App app = new App("app store");
-      app.open();
-      p("open: %s (%s)", app, app.isRunning() ? "running" : "");
-      App.pause(1);
-      if (app.isRunning()) {
-        new App("idea").focus();
-        App.pause(1);
-        app.focus();
-        App.pause(1);
-        app.close();
-      }
-      p("close: %s (%s)", app, app.isRunning() ? "running" : "");
-      App.focus("app store");
-      p("focus: %s (%s)", app, app.isRunning() ? "running" : "");
-      App.pause(1);
-      App.listApps();
-      App.close("app store");
-      App.pause(1);
       after();
     }
 
@@ -273,7 +248,6 @@ public class SikulixTest {
       scr.wait(2.0);
       match = scr.exists(testImage, 10);
       match.highlight(2);
-
       after();
     }
     //</editor-fold>

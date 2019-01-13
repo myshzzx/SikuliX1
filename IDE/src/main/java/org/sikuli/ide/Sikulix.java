@@ -53,11 +53,9 @@ public class Sikulix {
       sxFolder = new File(jarName).getParentFile();
     }
 
-    if (args.length > 0 && args[0].startsWith("-v")) {
+    if (args.length > 0 && args[0].equals("-v")) {
       verbose = true;
       args[0] += start;
-      Debug.globalTraceOn();
-      Debug.setStartWithTrace();
     }
 
     fAppData = makeAppData();
@@ -126,11 +124,11 @@ public class Sikulix {
       String separator = File.pathSeparator;
       fExtensions = fDirExtensions.listFiles();
       for (File fExtension : fExtensions) {
-        if (!ClassPath.isEmpty()) {
-          ClassPath += separator;
-        }
         String pExtension = fExtension.getAbsolutePath();
         if (pExtension.endsWith(".jar")) {
+          if (!ClassPath.isEmpty()) {
+            ClassPath += separator;
+          }
           if (pExtension.contains("jython") && pExtension.contains("standalone")) {
             if (pExtension.contains(jythonVersion)) {
               jythonLatest = true;

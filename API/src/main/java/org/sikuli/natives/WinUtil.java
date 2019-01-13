@@ -4,17 +4,28 @@
 package org.sikuli.natives;
 
 import org.sikuli.basics.Debug;
-import org.sikuli.script.*;
+import org.sikuli.script.App;
+import org.sikuli.script.Region;
+import org.sikuli.script.RunTime;
 import org.sikuli.util.ProcessRunner;
 
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.Kernel32;
 
 public class WinUtil implements OSUtil {
+
+  final int BUFFERSIZE = 32 * 1024 - 1;
+
+  public String getEnv(String token) {
+    char[] charResult = new char[0];
+    Kernel32.INSTANCE.GetEnvironmentVariable("PATH", charResult, BUFFERSIZE);
+    return "";
+  }
 
   @Override
   public void checkFeatureAvailability() {
@@ -130,7 +141,8 @@ public class WinUtil implements OSUtil {
   //</editor-fold>
 
   private static App getTaskByName(App app) {
-    String cmd = String.format("!tasklist /V /FO CSV /NH /FI \"IMAGENAME eq %s\"", app.getName());
+    String cmd = String.format("!tasklist /V /FO CSV /NH /FI \"IMAGENAME eq %s\"",
+            (app.getToken().isEmpty() ? app.getName() + ".exe" : app.getToken()));
     String sysout = RunTime.get().runcmd(cmd);
     String[] lines = sysout.split("\r\n");
     String[] parts = null;
@@ -190,7 +202,7 @@ public class WinUtil implements OSUtil {
     List<App> apps = new ArrayList<>();
     String cmd;
     if (name == null || name.isEmpty()) {
-      cmd = cmd = "!tasklist /V /FO CSV /NH /FI \"SESSIONNAME eq Console\"";
+      cmd = cmd = "!tasklist /V /FO CSV /NH /FI \"SESSIONNAME eq Console\" /FI \"status eq running\" /FI \"username ne N/A\"";
     } else {
       cmd = String.format("!tasklist /V /FO CSV /NH /FI \"IMAGENAME eq %s\"", name);
     }
@@ -202,19 +214,20 @@ public class WinUtil implements OSUtil {
         if (parts.length < 3) {
           continue;
         }
-        App theApp = new App();
-        theApp.setWindow(parts[parts.length - 1].trim());
-        theApp.setName(parts[1].trim());
         String thePID = parts[3].trim();
         Integer pid = -1;
         try {
           pid = Integer.parseInt(thePID);
         } catch (Exception ex) {
         }
+        String theWindow = parts[parts.length - 1].trim();
         if (pid != -1) {
-          if (theApp.getWindow().contains("N/A")) {
+          if (theWindow.contains("N/A")) {
             pid = -pid;
           }
+          App theApp = new App();
+          theApp.setName(parts[1].trim());
+          theApp.setWindow(theWindow);
           theApp.setPID(pid);
           apps.add(theApp);
         }

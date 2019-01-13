@@ -30,7 +30,7 @@ import org.sikuli.util.JythonHelper;
 
 public class ScriptingSupport {
 
-  public static RunTime runTime = RunTime.get();
+  private static RunTime runTime = RunTime.get();
 
 	private static final String me = "ScriptingSupport: ";
   private static final int lvl = 3;
@@ -290,7 +290,7 @@ public class ScriptingSupport {
       Debug.error("Settings: No scripting support available. Rerun Setup!");
       String em = "Terminating: No scripting support available. Rerun Setup!";
       log(-1, em);
-      if (Settings.isRunningIDE) {
+      if (runTime.isRunningIDE) {
         Sikulix.popError(em, "IDE has problems ...");
       }
       System.exit(1);
